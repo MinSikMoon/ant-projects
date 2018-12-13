@@ -1,24 +1,26 @@
 <project name="HelloWorld" basedir="." default="main">
 
-    <property name="src.dir"     value="src"/>
-
-    <property name="target.dir"   value="target"/>
+    <property name="src.dir" value="src"/>
+    <property name="target.dir" value="target"/>
     <property name="classes.dir" value="${target.dir}/classes"/>
-    <property name="jar.dir"     value="${target.dir}/jar"/>
+    <property name="jar.dir" value="${target.dir}/jar"/>
+    <property name="main-class" value="oata.HelloWorld"/>
+    <property name="lib.dir" value="lib"/>
 
-    <property name="main-class"  value="oata.HelloWorld"/>
-
-
-
+    <!-- 1. classpath를 지정한다. 라이브러리  폴더 위치 -->
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+    <!-- 2. 무슨폴더를 클린할 것인가? -->
     <target name="clean">
         <delete dir="${target.dir}"/>
     </target>
-
+    <!-- 3. 컴파일 : 소스폴더 위치, 클래스들이 만들어질 타겟과, classpathref로 라이브러리 참조폴더 정의해준다. -->
     <target name="compile">
         <mkdir dir="${classes.dir}"/>
-        <javac srcdir="${src.dir}" destdir="${classes.dir}"/>
+        <javac srcdir="${src.dir}" destdir="${classes.dir}"  classpathref="classpath"/>
     </target>
-
+    <!-- 4. jar가 어디에 만들어질 것인가? 메인클래스위치도 지정해준다. -->
     <target name="jar" depends="compile">
         <mkdir dir="${jar.dir}"/>
         <jar destfile="${jar.dir}/${ant.project.name}.jar" basedir="${classes.dir}">
@@ -27,10 +29,33 @@
             </manifest>
         </jar>
     </target>
+    <!-- path에 지정해줄 변수 만들어준다. -->
+    <path id="application" location="${jar.dir}/${ant.project.name}.jar"/>
 
+    <!-- 무엇을 run 시킬것인가? 클래스 위치와 jar 위치 지정  -->
     <target name="run" depends="jar">
-        <java jar="${jar.dir}/${ant.project.name}.jar" fork="true"/>
+        <java fork="true" classname="${main-class}">
+            <classpath>
+                <path refid="classpath"/>
+                <path refid="application"/>
+            </classpath>
+        </java>
     </target>
+
+    <!-- 테스팅 : batchtest는 하위 폴더의 패턴에 맞는것 모두 테스트 시켜주는것. -->
+    <target name="junit" depends="jar">
+        <junit printsummary="yes">
+            <classpath>
+                <path refid="classpath"/>
+                <path refid="application"/>
+            </classpath>
+
+            <batchtest fork="yes">
+                <fileset dir="${src.dir}" includes="**/*Test.java"/>
+            </batchtest>
+        </junit>
+    </target>
+
 
     <target name="clean-target" depends="clean,jar"/>
 
